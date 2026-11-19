@@ -1,0 +1,32 @@
+# GENERIC kernel for mac68k (Macintosh 128K, 512K and Plus)
+
+machine	mac68k
+ident	GENERIC
+
+makeoptions CC="m68k-apple-macos-gcc"
+makeoptions CFLAGS="-m68000 -Os -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -Wall -Wno-array-bounds"
+
+makeoptions AS="m68k-apple-macos-as"
+makeoptions ASFLAGS="-m68000"
+
+makeoptions LD="m68k-apple-macos-ld"
+makeoptions LDFLAGS=""
+
+makeoptions AR="m68k-apple-macos-ar"
+makeoptions ARFLAGS="rcs"
+
+makeoptions OBJCOPY="m68k-apple-macos-objcopy"
+makeoptions OCFLAGS=""
+
+makeoptions STRIP="m68k-apple-macos-strip --strip-debug"
+
+makeoptions CPP="m68k-apple-macos-cpp"
+makeoptions CPPFLAGS=""
+
+makeoptions KERNEL="kernel"
+makeoptions FLOPPY="floppy.img"
+
+mainbus0	at root
+via0		at mainbus0 addr 0xefe1fe irq 1
+
+include "mach/mac68k/conf/files.mac68k"

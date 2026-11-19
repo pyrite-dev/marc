@@ -2,6 +2,7 @@
 #include <sys/spinlock.h>
 #include <sys/thread.h>
 #include <sys/interrupt.h>
+#include <sys/sched.h>
 
 #include <stddef.h>
 

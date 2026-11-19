@@ -19,6 +19,7 @@ my %makeoptions = (
 	"CPP" => "cpp",
 	"CPPFLAGS" => "",
 	"KERNEL" => "kernel",
+	"FLOPPY" => "floppy.img",
 	);
 my %options = ();
 my @files = ();
@@ -47,7 +48,7 @@ sub parse_config {
 		$l =~ s/[\r\n]//g;
 		my @tokens = $l =~ /("(?:\\.|[^"\\])*"|[^\s"]+)/g;
 		my $discard = 0;
-		
+
 		map { s/^"(.*)"$/$1/g } @tokens;
 		map { s/\\(.)/$1/g } @tokens;
 		@tokens = grep {
@@ -55,11 +56,11 @@ sub parse_config {
 				0;
 			}else{
 				my $m = $_ =~ /#/;
-	
+
 				if($m){
 					$discard = 1;
 				}
-	
+
 				!$m;
 			}
 		} @tokens;
@@ -74,7 +75,6 @@ sub parse_config {
 			my $value = $tokens[2];
 
 			$key =~ s/=$//;
-	
 			if($tokens[0] eq "options"){
 				$options{$key} = $value;
 			}else{

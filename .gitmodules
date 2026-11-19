@@ -1,0 +1,3 @@
+[submodule "external/macboot"]
+	path = external/macboot
+	url = https://github.com/notvelleda/tiny-mac-bootloader

@@ -1,5 +1,6 @@
 #include <sys/spinlock.h>
 #include <sys/interrupt.h>
+#include <sys/sched.h>
 
 void spinlock_init(spinlock_t* lock) {
 	lock->lock = 0;

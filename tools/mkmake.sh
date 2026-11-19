@@ -12,6 +12,9 @@ if [ "$1" = "all" ]; then
 	echo "libc:"
 	echo "	\$(MAKE) -f Makefile.libc"
 	echo ""
+	echo "floppy: kernel"
+	echo "	\$(MAKE) -f Makefile.floppy"
+	echo ""
 	echo "clean:"
 	echo "	\$(MAKE) -f Makefile.kernel clean"
 	echo "	\$(MAKE) -f Makefile.libc clean"
@@ -42,4 +45,24 @@ elif [ "$1" = "libc" ]; then
 			$MATCH
 	) | ./tools/makedep.sh lib/libc
 	cat lib/libc/Makefile.in
+elif [ "$1" = "floppy" ]; then
+    if [ "$MACH" = "mac68k" ]; then
+		./tools/prelude.sh external/macboot "\$(FLOPPY)"
+		(
+			eval find \
+				external/macboot \
+				-maxdepth 1 -name "*.s"
+		) | ./tools/makedep.sh floppy
+		echo "floppy/boot_block.bin: \$(OBJS)"
+		echo "	\$(LD) -T \$(TOP)/external/macboot/boot_block.ld -o \$@ \$<"
+		echo ""
+		echo "\$(FLOPPY): floppy/boot_block.bin"
+		echo "	-rm floppy/fs.img"
+		echo "	mkdir -p floppy/fs"
+		echo "	cp \$(KERNEL) floppy/fs/kernel"
+		echo "	touch floppy/fs/cmdline"
+		echo "	mke2fs -t ext2 -d floppy/fs floppy/fs.img \$(FLOPPY_IMAGE_SIZE)"
+		echo "	head -c 1024 \$< > \$@"
+		echo "	tail -c +1025 floppy/fs.img >> \$@"
+	fi
 fi
