@@ -54,7 +54,10 @@ void intr_disable(unsigned int vector) {
 	intr_table[vector].enabled = 0;
 }
 
-__attribute__((interrupt)) void intr_dispatch(unsigned int vector, struct iregs* iregs) {
+#ifdef __i960__
+__attribute__((interrupt))
+#endif
+void intr_dispatch(unsigned int vector, struct iregs* iregs) {
 	struct intr_entry* entry;
 
 	if(vector >= NVEC) return;

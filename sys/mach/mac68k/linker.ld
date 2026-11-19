@@ -2,17 +2,20 @@ OUTPUT_FORMAT(elf32-m68k)
 OUTPUT_ARCH(m68k)
 ENTRY(_start)
 
+MEMORY
+{
+	RAM (rwx) : ORIGIN = 0x2000, LENGTH = 0x400000 - 0x2000
+}
+
 SECTIONS
 {
-	. = 0x2000 + SIZEOF_HEADERS;
-
 	.text : {
 		*(.text)
 		*(.text.*)
 		*(.rodata)
 		*(.rodata.*)
 		. = ALIGN(4);
-	}
+	} > RAM
 
 	.data : {
 		. = ALIGN(4);
@@ -21,7 +24,7 @@ SECTIONS
 		*(.data.*)
 		. = ALIGN(4);
 		_data_end = .;
-	}
+	} > RAM
 	_data_load = LOADADDR(.data);
 
 	.bss : {
@@ -32,14 +35,14 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		_bss_end = .;
-	}
+	} > RAM
 
 	.stack (NOLOAD) : {
 		. = ALIGN(4);
 		_kernel_stack_bottom = .;
 		. += 4096;
 		_kernel_stack_top = .;
-	}
+	} > RAM
 
 	_end = .;
 

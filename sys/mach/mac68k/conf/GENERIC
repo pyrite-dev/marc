@@ -27,6 +27,6 @@ makeoptions KERNEL="kernel"
 makeoptions FLOPPY="floppy.img"
 
 mainbus0	at root
-via0		at mainbus0 addr 0xefe1fe irq 1
+via0		at mainbus0 addr 0xefe1fe stride 512 irq 1 speed 200 clock 392000
 
 include "mach/mac68k/conf/files.mac68k"

@@ -1,6 +1,7 @@
 #include <sys/bus.h>
 #include <stdlib.h>
 
+/* TODO: These functions do not care about which byte to pick when stride is not default */
 /* TODO: Add I/O */
 
 void bus_space_init(bus_space_t* space, paddr_t locators[DEVICE_LOCATOR_COUNT]) {
@@ -13,60 +14,78 @@ static int bus_space_stride(bus_space_t* space, int def) {
 	return space->stride == DEVICE_LOCATOR_UNSET ? def : space->stride;
 }
 
-/* TODO: Make this function calculate actual index */
-static int bus_space_index(bus_space_t* space, int def) {
-	int stride = bus_space_stride(space, def);
-
-	if((stride % def) == 0) {
-#ifdef __LITTLE_ENDIAN__
-		return 0;
-#else
-		return (stride / def) - 1;
-#endif
-	}
-
-	/* FIXME */
-	return 0;
-}
-
 unsigned char bus_space_read8(bus_space_t* space, paddr_t offset) {
-	int			stride = bus_space_stride(space, 1);
-	volatile unsigned char* ptr    = (volatile unsigned char*)(space->addr + offset * stride);
+	int stride = bus_space_stride(space, 1);
 
-	return ptr[bus_space_index(space, 1)];
+	if(stride <= 1) {
+		volatile unsigned char* ptr = (volatile unsigned char*)(space->addr + offset * stride);
+
+		return *ptr;
+	} else if(stride == 2) {
+		return bus_space_read16(space, offset);
+	} else if(stride == 4) {
+		return bus_space_read32(space, offset);
+	} else {
+		volatile unsigned char* ptr = (volatile unsigned char*)(space->addr + offset * stride);
+
+		return *ptr;
+	}
 }
 
 void bus_space_write8(bus_space_t* space, paddr_t offset, unsigned char value) {
-	int			stride = bus_space_stride(space, 1);
-	volatile unsigned char* ptr    = (volatile unsigned char*)(space->addr + offset * stride);
+	int stride = bus_space_stride(space, 1);
 
-	ptr[bus_space_index(space, 1)] = value;
+	if(stride <= 1) {
+		volatile unsigned char* ptr = (volatile unsigned char*)(space->addr + offset * stride);
+
+		*ptr = value;
+	} else if(stride == 2) {
+		bus_space_write16(space, offset, value);
+	} else if(stride == 4) {
+		bus_space_write32(space, offset, value);
+	} else {
+		volatile unsigned char* ptr = (volatile unsigned char*)(space->addr + offset * stride);
+
+		*ptr = value;
+	}
 }
 
 unsigned short bus_space_read16(bus_space_t* space, paddr_t offset) {
-	int			 stride = bus_space_stride(space, 2);
-	volatile unsigned short* ptr	= (volatile unsigned short*)(space->addr + offset * stride);
+	int stride = bus_space_stride(space, 2);
 
-	return ptr[bus_space_index(space, 2)];
+	if(stride == 4) {
+		return bus_space_read32(space, offset);
+	} else {
+		volatile unsigned short* ptr = (volatile unsigned short*)(space->addr + offset * stride);
+
+		return *ptr;
+	}
 }
 
 void bus_space_write16(bus_space_t* space, paddr_t offset, unsigned short value) {
-	int			 stride = bus_space_stride(space, 2);
-	volatile unsigned short* ptr	= (volatile unsigned short*)(space->addr + offset * stride);
+	int stride = bus_space_stride(space, 2);
 
-	ptr[bus_space_index(space, 2)] = value;
+	if(stride == 4) {
+		bus_space_write32(space, offset, value);
+	} else {
+		volatile unsigned short* ptr = (volatile unsigned short*)(space->addr + offset * stride);
+
+		*ptr = value;
+	}
 }
 
 unsigned int bus_space_read32(bus_space_t* space, paddr_t offset) {
-	int		       stride = bus_space_stride(space, 4);
-	volatile unsigned int* ptr    = (volatile unsigned int*)(space->addr + offset * stride);
+	int stride = bus_space_stride(space, 4);
 
-	return ptr[bus_space_index(space, 4)];
+	volatile unsigned int* ptr = (volatile unsigned int*)(space->addr + offset * stride);
+
+	return *ptr;
 }
 
 void bus_space_write32(bus_space_t* space, paddr_t offset, unsigned int value) {
-	int		       stride = bus_space_stride(space, 4);
-	volatile unsigned int* ptr    = (volatile unsigned int*)(space->addr + offset * stride);
+	int stride = bus_space_stride(space, 4);
 
-	ptr[bus_space_index(space, 4)] = value;
+	volatile unsigned int* ptr = (volatile unsigned int*)(space->addr + offset * stride);
+
+	*ptr = value;
 }
