@@ -1,5 +1,5 @@
-#ifndef __MAC68K_DEV_VIA_H__
-#define __MAC68K_DEV_VIA_H__
+#ifndef __SYS_DEV_VIA_H__
+#define __SYS_DEV_VIA_H__
 
 /* 6522 register numbers */
 #define VIA_ORB 0

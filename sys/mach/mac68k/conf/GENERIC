@@ -30,3 +30,4 @@ mainbus0	at root
 via0		at mainbus0 addr 0xefe1fe stride 512 irq 1 speed 200 clock 392000
 
 include "mach/mac68k/conf/files.mac68k"
+include "dev/files.dev"

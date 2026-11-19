@@ -1,2 +1,1 @@
 file mach/mac68k/dev/mainbus.c	mainbus
-file mach/mac68k/dev/via.c	via
