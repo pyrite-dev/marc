@@ -1,57 +1,58 @@
 #include <sys/device.h>
 #include <sys/interrupt.h>
-#include <sys/cons.h>
+#include <sys/bus.h>
 #include <sys/sched.h>
 
-#include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <machine/mac_hw.h>
+#include "via.h"
 
-#define VIA(reg) (*(volatile uint8_t*)(via_base + 512 * (reg)))
-#define IER_SET 0x80 /* bit 7 set when writing IER means "enable these interrupts" */
+struct via_softc {
+	bus_space_t space;
 
-#define VIA_TICK_MS (1000 / 200)
-#define VIA_TIMER_COUNT (MAC_VIA_TICKS_PER_MS * VIA_TICK_MS)
+	int vector;
 
-static uint32_t		 via_base;
-static int			 via_vector = -1;
-static volatile uint32_t timer_ticks;
-static volatile uint32_t vbl_ticks;
+	unsigned int timer_ticks;
+	unsigned int vbl_ticks;
+};
 
 static void via_interrupt(unsigned int vector, struct iregs* iregs, void* arg) {
-	uint8_t ifr = VIA(MAC_VIA_REG_IFR);
+	struct via_softc* softc = ((struct device*)arg)->softc;
+	uint8_t		  ifr	= bus_space_read8(&softc->space, VIA_OFFSET(VIA_IFR));
 
 	/* writing a one to a flag bit clears it; bit 7 is read-only */
-	VIA(MAC_VIA_REG_IFR) = 0xff;
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_IFR), 0xff);
 
-	if(ifr & MAC_VIA_INT_TIMER1) {
-		timer_ticks++;
+	if(ifr & VIA_INT_TIMER1) {
+		softc->timer_ticks++;
 		sched_tick();
 	}
 
-	if(ifr & MAC_VIA_INT_VBLANK) {
-		vbl_ticks++;
+	if(ifr & VIA_INT_VBLANK) {
+		softc->vbl_ticks++;
 	}
 }
 
 /* Put timer 1 into free-run mode. */
-static void via_timer_init(void) {
+static void via_timer_init(struct via_softc* softc) {
 	uint16_t count = VIA_TIMER_COUNT;
 
 	/* stop all VIA interrupts while the timer is reprogrammed */
-	VIA(MAC_VIA_REG_IER) = 0x7f;
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_IER), 0x7f);
 
 	/* timer 1: free-run, with the PB7 output disabled */
-	VIA(MAC_VIA_REG_ACR) = (VIA(MAC_VIA_REG_ACR) & ~0x80) | MAC_VIA_ACR_TIMER1_FREERUN;
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_ACR),
+			 (bus_space_read8(&softc->space, VIA_OFFSET(VIA_ACR)) & ~0x80) | VIA_ACR_TIMER1_FREERUN);
 
-	VIA(MAC_VIA_REG_T1LL) = count & 0xff;
-	VIA(MAC_VIA_REG_T1LH) = (count >> 8) & 0xff;
-	VIA(MAC_VIA_REG_T1CL) = count & 0xff;
-	VIA(MAC_VIA_REG_T1CH) = (count >> 8) & 0xff;
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_T1LL), count & 0xff);
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_T1LH), (count >> 8) & 0xff);
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_T1CL), count & 0xff);
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_T1CH), (count >> 8) & 0xff);
 
 	/* discard anything that became pending while the timer was programmed */
-	VIA(MAC_VIA_REG_IFR) = 0xff;
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_IFR), 0xff);
 }
 
 static int via_match(struct device* parent, struct device_attach_args* args) {
@@ -59,30 +60,40 @@ static int via_match(struct device* parent, struct device_attach_args* args) {
 }
 
 static int via_attach(struct device* parent, struct device* self, struct device_attach_args* args) {
-	via_base   = (uint32_t)args->locators[DEVICE_LOCATOR_ADDR];
-	via_vector = _intr_vector(args->locators[DEVICE_LOCATOR_IRQ]);
+	struct via_softc* softc;
+	int		  vector = _intr_vector(args->locators[DEVICE_LOCATOR_IRQ]);
 
-	timer_ticks = 0;
-	vbl_ticks   = 0;
+	if(vector < 0) return -1;
 
-	if(via_vector < 0) return -1;
+	self->softc = softc = malloc(sizeof(*softc));
+	if(softc == NULL) return -1;
 
-	via_timer_init();
+	memset(softc, 0, sizeof(*softc));
+	softc->vector = vector;
 
-	intr_register(via_vector, via_interrupt, NULL);
-	intr_enable(via_vector);
+	bus_space_init(&softc->space, args->locators);
 
-	VIA(MAC_VIA_REG_IER) = IER_SET | MAC_VIA_INT_TIMER1 | MAC_VIA_INT_VBLANK;
+	via_timer_init(softc);
+
+	intr_register(vector, via_interrupt, self);
+	intr_enable(vector);
+
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_IER), VIA_IER_SET | VIA_INT_TIMER1 | VIA_INT_VBLANK);
 
 	return 0;
 }
 
 static void via_detach(struct device* self) {
-	VIA(MAC_VIA_REG_IER) = 0x7f; /* writing without bit 7 clears enables */
-	if(via_vector >= 0) {
-		intr_disable(via_vector);
-		intr_unregister(via_vector);
-	}
+	struct via_softc* softc = self->softc;
+
+	if(softc == NULL) return;
+
+	bus_space_write8(&softc->space, VIA_OFFSET(VIA_IER), 0x7f); /* writing without bit 7 clears enables */
+	intr_disable(softc->vector);
+	intr_unregister(softc->vector);
+
+	free(softc);
+	self->softc = NULL;
 }
 
 struct device_driver via_driver = {

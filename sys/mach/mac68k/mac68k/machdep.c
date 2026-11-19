@@ -7,6 +7,8 @@
 #include <machine/bootinfo.h>
 #include <machine/mac_hw.h>
 
+#include "../dev/via.h"
+
 extern char _end;
 
 /* set by _start from the arguments that the boot block passes in */
@@ -37,8 +39,8 @@ void machdep_init(void) {
 	}
 	boot_args[i] = 0;
 
-	MAC_VIA(MAC_VIA_REG_IER) = 0x7f; /* disable all VIA interrupts until a driver asks for them */
-	MAC_VIA(MAC_VIA_REG_IFR) = 0x7f; /* and clear anything that is already pending */
+	MAC_VIA(VIA_IER) = 0x7f; /* disable all VIA interrupts until a driver asks for them */
+	MAC_VIA(VIA_IFR) = 0x7f; /* and clear anything that is already pending */
 
 	scc_reset();
 
