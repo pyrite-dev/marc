@@ -2,6 +2,7 @@
 #include <sys/cons.h>
 #include <sys/panic.h>
 #include <sys/sched.h>
+#include <sys/syscall.h>
 
 #include <stdint.h>
 
@@ -44,6 +45,11 @@ void m68k_trap(unsigned int vector, struct iregs* frame) {
 	int	    i;
 
 	if(vector == VECTOR_SPURIOUS) return;
+
+	if(vector == VECTOR_TRAP_0) {
+		syscall_dispatch(frame);
+		return;
+	}
 
 	if(vector >= VECTOR_AUTOVECTOR_1 && vector <= VECTOR_AUTOVECTOR_7) {
 		intr_depth++;

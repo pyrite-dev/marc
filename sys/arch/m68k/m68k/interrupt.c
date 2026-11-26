@@ -18,14 +18,12 @@ void _intr_init(void) {
 }
 
 /*
- * Install a raw handler for an IRQ. The handler replaces the generic stub, so
- * it must save and restore whatever it uses and end with rte, exactly like a
- * CPU exception handler.
+ * Install a raw handler for an exception/interrupt vector. The handler
+ * replaces the generic stub, so it must save and restore whatever it uses and
+ * end with rte, exactly like a CPU exception handler.
  */
-void _intr_set(unsigned int irq, intr_raw_handler_t handler) {
-	int vector = _intr_vector(irq);
-
-	if(vector < 0 || vector >= VECTOR_COUNT) return;
+void _intr_set(unsigned int vector, intr_raw_handler_t handler) {
+	if(vector >= VECTOR_COUNT) return;
 
 	((volatile uint32_t*)0)[vector] = (uint32_t)(uintptr_t)handler;
 }

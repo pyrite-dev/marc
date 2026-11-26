@@ -1,0 +1,3 @@
+# the 68000 has no 32-bit multiply/divide instructions, so gcc emits calls
+# into libgcc for those operations
+OBJS += $(shell $(CC) -print-libgcc-file-name)

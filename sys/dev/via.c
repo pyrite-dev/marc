@@ -2,6 +2,7 @@
 #include <sys/interrupt.h>
 #include <sys/bus.h>
 #include <sys/sched.h>
+#include <sys/time.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -61,9 +62,14 @@ static int via_attach(struct device* parent, struct device* self, struct device_
 	struct via_softc* softc;
 	unsigned int	  clock	 = DEVICE_LOCATOR_DEFAULT(args->locators[DEVICE_LOCATOR_CLOCK], 392000);
 	unsigned int	  speed	 = DEVICE_LOCATOR_DEFAULT(args->locators[DEVICE_LOCATOR_SPEED], 200);
-	unsigned int	  count	 = clock / speed;
+	unsigned int	  count;
 	int		  vector = _intr_vector(args->locators[DEVICE_LOCATOR_IRQ]);
 
+	if(speed == 0) return -1;
+
+	count = clock / speed;
+
+	if(count == 0 || count > 65535) return -1;
 	if(vector < 0) return -1;
 
 	self->softc = softc = malloc(sizeof(*softc));
@@ -76,12 +82,18 @@ static int via_attach(struct device* parent, struct device* self, struct device_
 
 	via_timer_init(softc, count);
 
-	intr_register(vector, via_interrupt, self);
-	intr_enable(vector);
-
-	bus_space_write8(&softc->space, VIA_IER, VIA_IER_SET | VIA_INT_TIMER1 | VIA_INT_VBLANK);
+	hz = clock / count;
 
 	return 0;
+}
+
+static void via_enable_ints(struct device* self) {
+	struct via_softc* softc = self->softc;
+
+	intr_register(softc->vector, via_interrupt, self);
+	intr_enable(softc->vector);
+
+	bus_space_write8(&softc->space, VIA_IER, VIA_IER_SET | VIA_INT_TIMER1 | VIA_INT_VBLANK);
 }
 
 static void via_detach(struct device* self) {
@@ -101,4 +113,5 @@ struct device_driver via_driver = {
     "via",
     via_match,
     via_attach,
+    via_enable_ints,
     via_detach};

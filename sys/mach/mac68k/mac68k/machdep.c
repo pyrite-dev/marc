@@ -7,7 +7,7 @@
 #include <machine/bootinfo.h>
 #include <machine/mac_hw.h>
 
-#include "../dev/via.h"
+#include "../../../dev/via.h"
 
 extern char _end;
 

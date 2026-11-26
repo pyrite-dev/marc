@@ -20,6 +20,9 @@ static uint32_t		 console_rows;
 static int console_x;
 static int console_y;
 
+static void console_putc(int c);
+static int  console_getc(void);
+
 static void glyph_row(int cx, int cy, const uint8_t* glyph, int row) {
 	volatile uint8_t* dest_row = screen_base + (cy * FONT_HEIGHT + row) * screen_row_bytes;
 	uint8_t		  ink	   = glyph[row]; /* 6 significant bits, leftmost in bit 7 */
@@ -97,9 +100,12 @@ void cons_init(void) {
 
 	console_x = 0;
 	console_y = 0;
+
+	cons_output_register(console_putc);
+	cons_input_register(console_getc);
 }
 
-void cons_putc(int c) {
+static void console_putc(int c) {
 	if(c == '\r') {
 		console_x = 0;
 		return;
@@ -126,6 +132,6 @@ void cons_putc(int c) {
 	if(console_x >= (int)console_cols) newline();
 }
 
-int cons_getc(void) {
+static int console_getc(void) {
 	return -1; /* keyboard input is not wired up yet */
 }

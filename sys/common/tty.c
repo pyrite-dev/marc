@@ -7,6 +7,8 @@
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
+#include <string.h>
+
 static int ttyq_put(struct tty_queue* q, unsigned char data) {
 	if(q->count >= TTYQ_SIZE) return 0;
 

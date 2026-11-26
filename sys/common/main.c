@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <string.h>
 
 static thread_t thread;
 static char	stack[4096];
