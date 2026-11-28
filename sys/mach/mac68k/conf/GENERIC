@@ -18,7 +18,7 @@ makeoptions ARFLAGS="rcs"
 makeoptions OBJCOPY="m68k-apple-macos-objcopy"
 makeoptions OCFLAGS=""
 
-makeoptions STRIP="m68k-apple-macos-strip --strip-debug"
+makeoptions STRIP="m68k-apple-macos-strip"
 
 makeoptions CPP="m68k-apple-macos-cpp"
 makeoptions CPPFLAGS=""
@@ -28,6 +28,8 @@ makeoptions FLOPPY="floppy.img"
 
 mainbus0	at root
 via0		at mainbus0 addr 0xefe1fe stride 512 irq 1 speed 200 clock 392000
+macfb0		at mainbus0
+scc0		at mainbus0 addr 0x9ffff8 port 0xbffff9 irq 2 clock 3672000 baud 9600
 
 include "mach/mac68k/conf/files.mac68k"
 include "dev/files.dev"

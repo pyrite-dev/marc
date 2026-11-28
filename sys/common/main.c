@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+#include <stdio.h>
 
 static thread_t thread;
 static char	stack[4096];

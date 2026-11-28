@@ -6,6 +6,7 @@
 #include <sys/major.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 
 static struct disk* diskdev_lookup(dev_t dev) {
 	struct disk*   disk;

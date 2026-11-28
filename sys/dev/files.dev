@@ -1,5 +1,7 @@
-file dev/pit.c	pit
-file dev/ns.c	ns
-file dev/vdp.c	vdp
-file dev/wd.c	wd
-file dev/via.c	via
+file dev/pit.c		pit
+file dev/ns.c		ns
+file dev/vdp.c		vdp
+file dev/wd.c		wd
+file dev/via.c		via
+file dev/scc.c		scc
+file dev/macfb.c	macfb
